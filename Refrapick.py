@@ -44,7 +44,7 @@ class Refrapick(Tk):
             font=(
                 "Arial",
                 11))
-        self.statusLabel.grid(row=0, column=33, sticky="W")
+        self.statusLabel.grid(row=0, column=34, sticky="W")
         initialise(self)
         self.ico_openWaveform = PhotoImage(
             file="%s/images/abrir.gif" % getcwd())
@@ -304,10 +304,19 @@ class Refrapick(Tk):
 
         bt = Button(
             frame_toolbar,
+            image=self.ico_trim,
+            command=self.unPick,
+            width=25)
+        bt.grid(row=0, column=23, sticky="W")
+        bl = Balloon(self)
+        bl.bind(bt, "On/off un-pick mode")
+
+        bt = Button(
+            frame_toolbar,
             image=self.ico_allPicks,
             command=self.allPicks,
             width=25)
-        bt.grid(row=0, column=23, sticky="W")
+        bt.grid(row=0, column=24, sticky="W")
         bl = Balloon(self)
         bl.bind(bt, "Show/hide traveltimes picks from other files")
 
@@ -316,7 +325,7 @@ class Refrapick(Tk):
             image=self.ico_savePicks,
             command=self.savePicks,
             width=25)
-        bt.grid(row=0, column=24, sticky="W")
+        bt.grid(row=0, column=25, sticky="W")
         bl = Balloon(self)
         bl.bind(bt, "Save pick file")
 
@@ -325,7 +334,7 @@ class Refrapick(Tk):
             image=self.ico_loadPicks,
             command=self.loadPicks,
             width=25)
-        bt.grid(row=0, column=25, sticky="W")
+        bt.grid(row=0, column=26, sticky="W")
         bl = Balloon(self)
         bl.bind(bt, "Load pick file)")
 
@@ -334,7 +343,7 @@ class Refrapick(Tk):
             image=self.ico_velMode,
             command=self.appVelMode,
             width=25)
-        bt.grid(row=0, column=26, sticky="W")
+        bt.grid(row=0, column=27, sticky="W")
         bl = Balloon(self)
         bl.bind(bt, "Enable/disable apparent velocity mode")
 
@@ -343,7 +352,7 @@ class Refrapick(Tk):
             image=self.ico_tt,
             command=self.viewTraveltimes,
             width=25)
-        bt.grid(row=0, column=27, sticky="W")
+        bt.grid(row=0, column=28, sticky="W")
         bl = Balloon(self)
         bl.bind(bt, "View observed traveltimes")
 
@@ -352,7 +361,7 @@ class Refrapick(Tk):
             image=self.ico_survey,
             command=self.viewSurvey,
             width=25)
-        bt.grid(row=0, column=28, sticky="W")
+        bt.grid(row=0, column=29, sticky="W")
         bl = Balloon(self)
         bl.bind(bt, "View survey geometry")
 
@@ -361,7 +370,7 @@ class Refrapick(Tk):
             image=self.ico_plotOptions,
             command=self.plotOptions,
             width=25)
-        bt.grid(row=0, column=29, sticky="W")
+        bt.grid(row=0, column=30, sticky="W")
         bl = Balloon(self)
         bl.bind(bt, "Plot options")
 
@@ -370,7 +379,7 @@ class Refrapick(Tk):
             image=self.ico_options,
             command=self.options,
             width=25)
-        bt.grid(row=0, column=30, sticky="W")
+        bt.grid(row=0, column=31, sticky="W")
         bl = Balloon(self)
         bl.bind(bt, "Edit acquisition parameters")
 
@@ -379,7 +388,7 @@ class Refrapick(Tk):
             image=self.ico_reset,
             command=self.reset,
             width=25)
-        bt.grid(row=0, column=31, sticky="W")
+        bt.grid(row=0, column=32, sticky="W")
         bl = Balloon(self)
         bl.bind(bt, "Reset all")
 
@@ -388,7 +397,7 @@ class Refrapick(Tk):
             image=self.ico_help,
             command=self.help,
             width=25)
-        bt.grid(row=0, column=32, sticky="W")
+        bt.grid(row=0, column=33, sticky="W")
         bl = Balloon(self)
         bl.bind(bt, "Help")
 
@@ -430,6 +439,7 @@ class Refrapick(Tk):
         self.ttArts = []
         self.projReady = False
         self.pickMode = False
+        self.unPickMode = False
         self.velMode = False
         self.pickConnections = []
         self.velConnections = []
@@ -1305,6 +1315,8 @@ class Refrapick(Tk):
                 self.pick()
             if self.velMode:
                 self.appVelMode()
+            if self.unPickMode:
+                self.unPick()
 
             files = filedialog.askopenfilenames(
                 title='Open',
@@ -1325,6 +1337,24 @@ class Refrapick(Tk):
                 else:
                     n = 0
 
+                locfile = filedialog.askopenfilename(title='geom',
+                    initialdir=self.projPath+"/data/",
+                    filetypes=[('txt','*.txt'),('dat','*.dat')])
+
+                if locfile:
+                    fnames,srcx,rec0 = [], [], []
+
+                    with open(locfile, "r") as file:
+
+                        lines = file.readlines()
+
+                        for l in lines:
+                            fnames.append(l.split()[0])
+                            srcx.append(float(l.split()[1]))
+                            rec0.append(float(l.split()[2]))
+                    fnames = array(fnames); srcx = array(srcx); rec0 = array(rec0)
+
+
                 for i, file in enumerate(files):
 
                     st = read(file)
@@ -1337,6 +1367,15 @@ class Refrapick(Tk):
                         source = float(st[0].stats.seg2['SOURCE_LOCATION'])
                         x1 = float(st[0].stats.seg2['RECEIVER_LOCATION'])
                         xend = float(st[-1].stats.seg2['RECEIVER_LOCATION'])
+
+                        if locfile:
+                            # find filename in list
+                            ind = where(fnames == file.split('/')[-1].split('.')[0])[0]
+                            if len(ind) == 1:
+                                newEND = xend + (rec0[ind[0]] - x1)
+                                x1 = rec0[ind[0]]
+                                xend = newEND
+                                source = srcx[ind[0]]
 
                     else:
 
@@ -1451,11 +1490,12 @@ class Refrapick(Tk):
                         self.originalTracesTimes[i +
                                                  n].append(tr.times() + delay)
 
-                        if st[0].stats._format == "SEG2":
-                            self.receiverPositions[i + n].append(
-                                float(tr.stats.seg2['RECEIVER_LOCATION']))
-                        else:
-                            self.receiverPositions[i + n].append(x1 + j * dx)
+                        #if st[0].stats._format == "SEG2":
+                        #    self.receiverPositions[i + n].append(
+                        #        float(tr.stats.seg2['RECEIVER_LOCATION']))
+                        #else:
+                        #    self.receiverPositions[i + n].append(x1 + j * dx)
+                        self.receiverPositions[i + n].append(x1 + j * dx)
 
                     ax.set_ylabel("TIME [s]")
                     ax.set_xlabel("RECEIVER POSITION [m]")
@@ -1991,6 +2031,8 @@ E-mail: vjs279@hotmail.com
 
                 if self.velMode:
                     self.appVelMode()
+                if self.unPickMode:
+                    self.unPick()
 
                 self.statusLabel.configure(
                     text="Pick mode enabled!", font=(
@@ -2355,6 +2397,105 @@ E-mail: vjs279@hotmail.com
                     title="Refrapick",
                     message="The pick file has been saved!")
 
+
+
+
+    def unPick(self):
+
+        if self.sts:
+            # mode checks, on/off
+            if not self.unPickMode:
+                if self.velMode:
+                    self.appVelMode()
+                if self.pickMode:
+                    self.pick()
+
+                # status bar
+                self.statusLabel.configure(
+                    text="un-pick mode enabled!", font=(
+                        "Arial", 11))
+                messagebox.showinfo(
+                    title="Refrapick",
+                    message="un-pick mode enabled")
+
+                if self.xpicks[self.currentSt]:
+                # turn off lines if lines are there
+                    if self.pickLineArts[self.currentSt]:
+                        self.pickLineArts[self.currentSt].remove()
+                        self.pickLineArts[self.currentSt] = False
+                        self.figs[self.currentSt].canvas.draw()
+
+
+                def removePick(x, t):
+                    for j in range(len(x)):
+
+                        index2remove = self.xpicks[self.currentSt].index(x[j])
+                        self.picksArts[self.currentSt][index2remove].remove()
+                        del self.picksArts[self.currentSt][index2remove]
+                        del self.xpicks[self.currentSt][index2remove]
+                        del self.tpicks[self.currentSt][index2remove]
+
+                    self.figs[self.currentSt].canvas.draw()
+
+                def click1(event):
+
+                    if event.button == 1:
+
+                        x = min(self.receiverPositions[self.currentSt], key=lambda x: abs(
+                            event.xdata - x))
+
+                        if x not in self.xpicks[self.currentSt]:
+                            pass
+                        else:
+                            removePick([x], [event.ydata])
+
+                def click2(event):
+
+                    if event.button == 3:
+
+                        self.click2on = True
+                        x = min(self.receiverPositions[self.currentSt], key=lambda x: abs(
+                            event.xdata - x))
+                        self.pickLine, = self.axs[self.currentSt].plot(
+                            x, event.ydata, c=self.pickLineColor, ls=self.pickLineStyle, lw=.7)
+                        self.xpickLine = [x]
+                        self.tpickLine = [event.ydata]
+
+                        if x not in self.xpicks[self.currentSt]:
+                            pass
+                        else:
+                            removePick([x], [event.ydata])
+
+                for i in range(len(self.sts)):
+
+                    self.click2on = False
+                    conPick1 = self.figs[i].canvas.mpl_connect(
+                        'button_press_event', click1)
+                    conPick2 = self.figs[i].canvas.mpl_connect(
+                        'button_press_event', click2)
+                    self.pickConnections[i][0] = conPick1
+                    self.pickConnections[i][1] = conPick2
+                    self.unPickMode = True
+
+            else:
+
+                for i in range(len(self.sts)):
+
+                    for con in self.pickConnections[i]:
+                        self.figs[i].canvas.mpl_disconnect(con)
+                    self.pickConnections[i][0] = False
+                    self.pickConnections[i][1] = False
+
+                self.unPickMode = False
+                self.statusLabel.configure(
+                    text="un-pick mode disabled!", font=(
+                        "Arial", 11))
+                messagebox.showinfo(
+                    title="Refrapick",
+                    message="un-pick mode disabled!")
+
+
+
     def clearPicks(self):
 
         if self.sts:
@@ -2529,6 +2670,8 @@ E-mail: vjs279@hotmail.com
 
                 if self.pickMode:
                     self.pick()
+                if self.unPickMode:
+                    self.unPick()
 
                 self.statusLabel.configure(
                     text="Apparent velocity mode enabled!", font=(
