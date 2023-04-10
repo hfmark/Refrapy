@@ -104,6 +104,7 @@ class Refrapick(Tk):
         self.ico_plotOptions = PhotoImage(
             file="%s/images/ico_plotOptions.gif" %
             getcwd())
+        self.ico_unX = PhotoImage(file="%s/images/cancel.png" % getcwd())
 
         bt = Button(
             frame_toolbar,
@@ -304,12 +305,12 @@ class Refrapick(Tk):
 
         bt = Button(
             frame_toolbar,
-            image=self.ico_trim,
+            image=self.ico_unX,
             command=self.unPick,
             width=25)
         bt.grid(row=0, column=23, sticky="W")
         bl = Balloon(self)
-        bl.bind(bt, "On/off un-pick mode")
+        bl.bind(bt, "Enable/disable un-pick mode")
 
         bt = Button(
             frame_toolbar,
@@ -2072,7 +2073,7 @@ E-mail: vjs279@hotmail.com
 
                 def click1(event):
 
-                    if event.button == 1:
+                    if event.button == 1 and event.inaxes:
 
                         x = min(self.receiverPositions[self.currentSt], key=lambda x: abs(
                             event.xdata - x))
@@ -2084,7 +2085,7 @@ E-mail: vjs279@hotmail.com
 
                 def click2(event):
 
-                    if event.button == 3:
+                    if event.button == 3 and event.inaxes:
 
                         self.click2on = True
                         x = min(self.receiverPositions[self.currentSt], key=lambda x: abs(
@@ -2218,8 +2219,8 @@ E-mail: vjs279@hotmail.com
     def savePicks(self):
 
         if self.sts:
-
             allx = []
+            self.pickPresent = False  # assume no picks to start
 
             for i in range(len(self.sts)):
 
@@ -2229,8 +2230,8 @@ E-mail: vjs279@hotmail.com
 
                 if self.xpicks[i]:
                     pickPresent = True
-                else:
-                    pickPresent = False
+                #else:  # don't turn it off again! we don't have to pick every file to save
+                #    pickPresent = False
 
             sgx = list(set(allx + self.sources))
 
@@ -2439,7 +2440,7 @@ E-mail: vjs279@hotmail.com
 
                 def click1(event):
 
-                    if event.button == 1:
+                    if event.button == 1 and event.inaxes:
 
                         x = min(self.receiverPositions[self.currentSt], key=lambda x: abs(
                             event.xdata - x))
@@ -2451,7 +2452,7 @@ E-mail: vjs279@hotmail.com
 
                 def click2(event):
 
-                    if event.button == 3:
+                    if event.button == 3 and event.inaxes:
 
                         self.click2on = True
                         x = min(self.receiverPositions[self.currentSt], key=lambda x: abs(
